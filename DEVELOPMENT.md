@@ -1,0 +1,653 @@
+# Sidecar Development Status
+
+Last reviewed: 2026-10-06
+Current development state: ACTIVE
+
+## Purpose
+
+This file is the repository-level source of truth for Sidecar design, development priorities and **evidence of completion**. It is intended to be readable by both the user and AI coding agents.
+
+Sidecar is a private two-person web chat for Gez and Tanya, with first-class cross-platform transfer of files, screenshots, clipboard content and short messages between macOS and Windows devices.
+
+## Product objective
+
+Build a simple, dependable private web app that makes it faster to pass text and files between two nearby people/devices than using email, Teams or cloud drives.
+
+The primary interaction is:
+
+> paste, drop, type, send.
+
+Chat is persistent, but the transfer experience is the product priority.
+
+## Product principles
+
+1. **Two-person by design** — no groups, channels, organisations or complex account model in V1.
+2. **Transfer-first UX** — paste and drag/drop must feel immediate.
+3. **Cross-platform** — macOS and Windows are first-class targets.
+4. **Private by default** — no public rooms, indexing or anonymous access.
+5. **Local/self-hostable** — designed to run on the existing Ubuntu server using Docker.
+6. **Simple recovery** — messages and files survive browser refreshes and service restarts.
+7. **Explicit clipboard sharing** — no silent background clipboard scraping/synchronisation.
+8. **Progressive enhancement** — clipboard APIs may differ by browser/OS, so file picker and drag/drop remain reliable fallbacks.
+
+## Proposed architecture
+
+### Front end
+- React + TypeScript
+- Responsive single-page application
+- WebSocket client for live updates
+- Native browser drag/drop and paste handlers
+- File upload progress
+- Inline image preview
+- File cards for non-image attachments
+- Copy button for text messages
+- PWA-capable shell as a later enhancement
+
+### Back end
+- FastAPI (Python)
+- REST endpoints for session bootstrap, history and file transfer
+- WebSocket endpoint for live chat events
+- SQLite for V1 persistence
+- Files stored on mounted server storage rather than inside the database
+- UUID-based internal attachment names while preserving original filenames in metadata
+- Configuration via environment variables
+
+### Deployment
+- Docker image
+- Docker Compose for app + persistent volumes
+- Reverse proxy compatible
+- HTTPS strongly preferred because browser clipboard functionality is more reliable in a secure context
+- Persistent mounts for database and uploads
+- Health endpoint for deployment checks
+
+## High-level system layout
+
+```text
+macOS browser ─┐
+               ├─ HTTPS / WebSocket ─ Sidecar ─ SQLite
+Windows browser┘                         │
+                                        └─ persistent upload storage
+```
+
+## Proposed V1 user experience
+
+### Identity
+On first use, the user chooses:
+
+- Gez
+- Tanya
+
+A simple shared/private access mechanism protects the app. The browser remembers the selected identity.
+
+V1 should avoid a full registration/password-reset system unless deployment requirements make it necessary.
+
+### Main screen
+- Header: Sidecar, peer identity, online/offline state
+- Central chronological conversation
+- Distinct left/right message alignment by sender
+- Composer at bottom
+- Whole conversation/composer area accepts dropped files
+- Paste into composer accepts text, screenshots and browser-exposed file clipboard items
+- Attachment button remains available as fallback
+- Send button and Enter-to-send for text
+- Clear upload/progress state
+- Scroll to newest message with sensible preservation when reading history
+
+### Message types
+- Text
+- Image
+- File
+- Mixed message: text + one or more attachments
+
+### File experience
+- Drag one or more files from Finder/Explorer
+- Paste screenshots/images directly
+- Attempt clipboard-file paste where browser/OS exposes file clipboard data
+- File picker fallback
+- Download original file
+- Preserve original filename
+- Display size and type
+- Inline preview for safe image types
+- Reject unsupported/oversized files with a clear message
+
+### Transfer-only behaviour
+A user must be able to send files without typing a chat message. This is a core Sidecar workflow.
+
+## Initial data model
+
+### users
+Because V1 is intentionally two-person, users may initially be configuration-defined rather than a general registration table.
+
+Fields if persisted:
+- id
+- display_name
+- created_at
+- last_seen_at
+
+### messages
+- id (UUID)
+- sender_id
+- body
+- created_at
+- edited_at nullable
+- deleted_at nullable
+- client_message_id for idempotency
+
+### attachments
+- id (UUID)
+- message_id
+- original_filename
+- stored_filename/path
+- mime_type
+- size_bytes
+- sha256 optional/recommended
+- created_at
+
+### sessions
+If server-side sessions are used:
+- id
+- user_id
+- created_at
+- expires_at
+- last_seen_at
+
+## Event model
+
+WebSocket events should be explicit and versionable.
+
+Initial event types:
+- `message.created`
+- `message.updated`
+- `message.deleted`
+- `presence.changed`
+- `upload.completed`
+
+Clients should be able to reconnect and recover authoritative history through REST rather than trusting missed WebSocket events.
+
+## Security baseline
+
+V1 must include:
+- authenticated/private access
+- HTTPS-compatible deployment
+- server-side filename/path sanitisation
+- generated storage filenames
+- upload size limit
+- MIME/type handling that does not trust filename extensions
+- safe download response headers
+- protection against path traversal
+- CSRF/session protections appropriate to the chosen auth model
+- secure cookie settings where cookies are used
+- no secrets committed to Git
+- no arbitrary HTML rendering from message bodies
+- attachment metadata validation
+
+Do not expose the upload directory directly as an unrestricted static directory if that bypasses access control.
+
+## Testing strategy
+
+### Back end
+- message creation/history
+- attachment upload/download
+- upload validation
+- authentication/session rules
+- path traversal protection
+- reconnect/history recovery
+- message deletion rules
+- WebSocket event publication
+
+### Front end
+- text send
+- drop files
+- paste text
+- paste image/file clipboard item where testable
+- multi-file queue
+- upload progress/error state
+- file-only send
+- reconnect behaviour
+- copy-text action
+
+### End-to-end
+At minimum:
+- Gez sends text, Tanya receives live
+- Tanya replies, Gez receives live
+- Mac-style paste path sends an image/file where browser APIs expose it
+- Windows drag/drop uploads and transfers a file
+- file survives restart and remains downloadable
+- refresh restores conversation history
+- unauthenticated user cannot read/download chat content
+
+## Status values
+
+- 🔵 **PLANNED** — agreed or captured, not started.
+- 🔨 **IN PROGRESS** — implementation has started but completion evidence is incomplete.
+- 🚫 **BLOCKED** — cannot progress until a dependency, conflict or decision is resolved.
+- ⏳ **AWAITING ACCEPTANCE** — development evidence is complete but a user/external acceptance step remains.
+- ✅ **COMPLETE** — implementation and all applicable evidence checks have been verified.
+- 💤 **DEFERRED** — intentionally postponed.
+
+## Evidence standard
+
+A development item MUST NOT be marked **COMPLETE** solely because an AI agent, developer, document, UI message or successful CI run says that it is complete.
+
+Before using COMPLETE, verify all applicable evidence:
+
+1. the requested implementation exists in the repository;
+2. the expected files actually changed;
+3. a non-empty diff or equivalent implementation evidence exists;
+4. tests for the behaviour exist, or a reason for no test is recorded;
+5. relevant tests pass;
+6. build, lint, type-check, migration or other repository validation passes where applicable;
+7. CI passes where CI exists;
+8. commit and/or pull-request evidence is recorded;
+9. the change is merged into the intended branch when merge is required;
+10. post-merge verification confirms the expected change exists on the intended branch where appropriate;
+11. user/external acceptance is recorded separately from development completion.
+
+Green CI alone does not prove feature completion.
+
+## Development ledger
+
+### DEV-000 — Establish Sidecar product and development baseline
+
+Status: ✅ COMPLETE
+Priority: Critical
+Owner/Agent: ChatGPT
+Branch: main
+Depends on: None
+Can run in parallel with: None
+Integration status: documentation baseline
+
+Requirement:
+Define Sidecar's product scope, target architecture, V1 behaviour, development order and evidence rules before implementation begins.
+
+Implementation:
+- Created this `DEVELOPMENT.md`.
+- Created `AGENTS.md`.
+- Defined the transfer-first product principles.
+- Defined initial architecture, data model, security baseline and test strategy.
+- Defined phased implementation items below.
+
+Evidence:
+- Files: `DEVELOPMENT.md`, `AGENTS.md`
+- Runtime tests: not applicable; documentation/process baseline.
+- User acceptance: directly requested on 2026-10-06.
+
+Completion criteria:
+- [x] Product purpose documented.
+- [x] Architecture proposed.
+- [x] V1 UX documented.
+- [x] Initial data model documented.
+- [x] Security baseline documented.
+- [x] Testing approach documented.
+- [x] Development ledger created.
+- [x] Agent working agreement created.
+
+### DEV-001 — Repository scaffold and local runnable shell
+
+Status: 🔵 PLANNED
+Priority: Critical
+Owner/Agent: Unassigned
+Branch: TBD
+Depends on: DEV-000
+Can run in parallel with: None
+Integration status: not started
+
+Requirement:
+Create the runnable Sidecar project skeleton with front end, back end, configuration, local development workflow, Docker support and initial CI.
+
+Completion criteria:
+- [ ] React + TypeScript front end exists.
+- [ ] FastAPI back end exists.
+- [ ] Local development commands documented.
+- [ ] Docker build works.
+- [ ] Docker Compose starts the application.
+- [ ] Persistent database/upload volumes defined.
+- [ ] Health endpoint exists.
+- [ ] Basic lint/test/type-check commands exist.
+- [ ] GitHub Actions validates the project.
+- [ ] README contains setup and run instructions.
+
+### DEV-002 — Private two-person identity and session access
+
+Status: 🔵 PLANNED
+Priority: Critical
+Owner/Agent: Unassigned
+Branch: TBD
+Depends on: DEV-001
+Can run in parallel with: DEV-003 back-end schema design only, if file ownership does not overlap
+Integration status: not started
+
+Requirement:
+Protect Sidecar from unauthorised access while retaining a very simple Gez/Tanya identity experience.
+
+Target UX:
+- Select Gez or Tanya.
+- Authenticate using a simple private access mechanism.
+- Remember identity/session on the device.
+- Show current identity clearly.
+- Logout/switch identity explicitly.
+
+Completion criteria:
+- [ ] Unauthenticated users cannot access conversation history.
+- [ ] Unauthenticated users cannot download attachments.
+- [ ] Gez and Tanya identities are distinguishable.
+- [ ] Session persists appropriately across refresh/restart.
+- [ ] Secrets are configuration-driven.
+- [ ] Authentication/session tests pass.
+
+### DEV-003 — Persistent chat data model and REST API
+
+Status: 🔵 PLANNED
+Priority: Critical
+Owner/Agent: Unassigned
+Branch: TBD
+Depends on: DEV-001
+Can run in parallel with: DEV-002 where module ownership is separate
+Integration status: not started
+
+Requirement:
+Implement authoritative persistent message history.
+
+Completion criteria:
+- [ ] SQLite schema/migration mechanism exists.
+- [ ] Message UUIDs and timestamps are stored.
+- [ ] Messages are associated with sender identity.
+- [ ] History endpoint supports ordered retrieval.
+- [ ] Client idempotency prevents accidental duplicate sends.
+- [ ] Delete/edit policy is defined and tested.
+- [ ] Restart preserves messages.
+- [ ] Relevant API tests pass.
+
+### DEV-004 — Real-time WebSocket chat
+
+Status: 🔵 PLANNED
+Priority: Critical
+Owner/Agent: Unassigned
+Branch: TBD
+Depends on: DEV-002, DEV-003
+Can run in parallel with: front-end visual shell work
+Integration status: not started
+
+Requirement:
+Deliver real-time messages between both connected browsers with reliable recovery after reconnect.
+
+Completion criteria:
+- [ ] Authenticated WebSocket connection works.
+- [ ] New messages appear live on peer device.
+- [ ] Presence/connection state is visible.
+- [ ] Reconnect logic exists.
+- [ ] REST history remains authoritative after missed events.
+- [ ] Duplicate events do not duplicate messages.
+- [ ] WebSocket tests pass.
+
+### DEV-005 — Core conversation UI
+
+Status: 🔵 PLANNED
+Priority: Critical
+Owner/Agent: Unassigned
+Branch: TBD
+Depends on: DEV-003, DEV-004
+Can run in parallel with: DEV-006 back-end upload implementation
+Integration status: not started
+
+Requirement:
+Create the primary Sidecar conversation interface optimised for two people sitting near each other.
+
+Completion criteria:
+- [ ] Clear Gez/Tanya visual distinction.
+- [ ] Text composer works.
+- [ ] Enter-to-send behaviour is sensible.
+- [ ] Conversation restores after refresh.
+- [ ] Live incoming messages render correctly.
+- [ ] Timestamps are readable but unobtrusive.
+- [ ] Scroll behaviour is usable with long history.
+- [ ] Copy action exists on text messages.
+- [ ] Responsive layout works on normal desktop/laptop widths.
+
+### DEV-006 — Attachment storage and secure file API
+
+Status: 🔵 PLANNED
+Priority: Critical
+Owner/Agent: Unassigned
+Branch: TBD
+Depends on: DEV-002, DEV-003
+Can run in parallel with: DEV-005
+Integration status: not started
+
+Requirement:
+Store and retrieve chat attachments securely and persistently.
+
+Completion criteria:
+- [ ] Multi-part upload endpoint exists.
+- [ ] Generated storage names prevent unsafe direct filename use.
+- [ ] Original filename is preserved as metadata.
+- [ ] Size limit is configurable.
+- [ ] Path traversal is prevented.
+- [ ] Download requires authorised access.
+- [ ] Download preserves useful original filename.
+- [ ] File persists across app restart.
+- [ ] Relevant security/API tests pass.
+
+### DEV-007 — Drag/drop and file-transfer UX
+
+Status: 🔵 PLANNED
+Priority: Critical
+Owner/Agent: Unassigned
+Branch: TBD
+Depends on: DEV-005, DEV-006
+Can run in parallel with: DEV-008 clipboard handling where practical
+Integration status: not started
+
+Requirement:
+Make file transfer from Windows Explorer and macOS Finder obvious and fast.
+
+Completion criteria:
+- [ ] Whole intended drop zone visibly responds to drag-over.
+- [ ] Single-file drop works.
+- [ ] Multi-file drop works.
+- [ ] File-only message works without text.
+- [ ] Upload progress/state is visible.
+- [ ] Failed uploads show actionable errors.
+- [ ] Attachment cards show filename, size and type.
+- [ ] Download works from peer device.
+
+### DEV-008 — Clipboard paste handling
+
+Status: 🔵 PLANNED
+Priority: Critical
+Owner/Agent: Unassigned
+Branch: TBD
+Depends on: DEV-005, DEV-006
+Can run in parallel with: DEV-007
+Integration status: not started
+
+Requirement:
+Support Sidecar's key Mac/Windows paste workflow without assuming browser APIs can expose every OS clipboard file operation.
+
+Completion criteria:
+- [ ] Normal text paste remains normal text input.
+- [ ] Pasted screenshots/images can become attachments.
+- [ ] Browser-exposed clipboard file items can become attachments.
+- [ ] Multiple pasted items are handled safely.
+- [ ] Unsupported clipboard content fails gracefully.
+- [ ] File picker remains available as fallback.
+- [ ] Clipboard behaviour is documented for supported browsers.
+- [ ] No background clipboard scraping/sync is introduced.
+
+### DEV-009 — Inline previews and attachment presentation
+
+Status: 🔵 PLANNED
+Priority: High
+Owner/Agent: Unassigned
+Branch: TBD
+Depends on: DEV-006, DEV-007
+Can run in parallel with: DEV-010
+Integration status: not started
+
+Requirement:
+Make transferred content immediately recognisable without building an unsafe general-purpose document renderer.
+
+Completion criteria:
+- [ ] Safe image types show inline thumbnail/preview.
+- [ ] Non-image files render as file cards.
+- [ ] MIME/type/size are visible appropriately.
+- [ ] Preview failure falls back to file card.
+- [ ] Unsafe active content is not rendered inline as trusted HTML.
+- [ ] Download remains available.
+
+### DEV-010 — Reliability, reconnect and delivery feedback
+
+Status: 🔵 PLANNED
+Priority: High
+Owner/Agent: Unassigned
+Branch: TBD
+Depends on: DEV-004, DEV-005, DEV-006
+Can run in parallel with: DEV-009
+Integration status: not started
+
+Requirement:
+Ensure the application behaves predictably when Wi-Fi, browser tabs or the server briefly disconnect.
+
+Completion criteria:
+- [ ] Sending state is visible.
+- [ ] Upload state is visible.
+- [ ] Failed send can be retried safely.
+- [ ] Client message IDs prevent duplicate retry messages.
+- [ ] WebSocket reconnects automatically.
+- [ ] Missed history is recovered.
+- [ ] Presence recovers correctly.
+- [ ] Restart/reconnect scenario is tested.
+
+### DEV-011 — Docker deployment and HTTPS-ready production configuration
+
+Status: 🔵 PLANNED
+Priority: High
+Owner/Agent: Unassigned
+Branch: TBD
+Depends on: DEV-001 through DEV-010 core V1 features
+Can run in parallel with: documentation polish
+Integration status: not started
+
+Requirement:
+Prepare Sidecar for dependable deployment on the Ubuntu server.
+
+Completion criteria:
+- [ ] Production Docker image builds reproducibly.
+- [ ] Docker Compose configuration is documented.
+- [ ] Database and uploads use persistent host/volume storage.
+- [ ] Environment configuration is documented.
+- [ ] Health check is usable by Docker/reverse proxy.
+- [ ] Reverse proxy/HTTPS deployment notes exist.
+- [ ] Backup/restore locations are documented.
+- [ ] No development secret is embedded in image/repo.
+
+### DEV-012 — V1 end-to-end acceptance
+
+Status: 🔵 PLANNED
+Priority: Critical
+Owner/Agent: Unassigned
+Branch: main
+Depends on: DEV-002 through DEV-011
+Can run in parallel with: None
+Integration status: not started
+
+Requirement:
+Verify Sidecar as a real two-device Mac/Windows conversation and transfer tool.
+
+Acceptance scenarios:
+1. Gez sends text; Tanya sees it live.
+2. Tanya replies; Gez sees it live.
+3. A screenshot pasted on Mac appears as an attachment for Tanya.
+4. A file dragged from Windows Explorer reaches Gez.
+5. Multiple files transfer in one action.
+6. A file-only transfer works.
+7. Refresh preserves the conversation.
+8. Server restart preserves messages/files.
+9. Reconnect does not duplicate messages.
+10. Unauthorised access cannot read/download content.
+
+Completion criteria:
+- [ ] All acceptance scenarios verified.
+- [ ] Relevant automated tests pass.
+- [ ] Production build passes.
+- [ ] CI passes.
+- [ ] Deployment is verified.
+- [ ] Remaining limitations documented.
+- [ ] User acceptance recorded separately.
+
+## V2 backlog
+
+The following are intentionally outside V1 unless implementation naturally requires them.
+
+### DEV-020 — PWA/installable app
+- install Sidecar to desktop/home screen
+- notification support
+- better standalone window experience
+
+### DEV-021 — Search and filtering
+- message text search
+- attachment filename/type search
+- date filtering
+
+### DEV-022 — Pinned/favourite items
+- pin useful text, files or links
+- simple shared reference area
+
+### DEV-023 — Shared clipboard convenience
+- explicit "Copy" on the receiving device
+- optional one-click send-current-clipboard action where browser permissions allow
+- never silent/unrestricted clipboard monitoring
+
+### DEV-024 — Message replies/reactions
+- reply-to context
+- lightweight acknowledgement/reactions if useful
+
+### DEV-025 — File retention and housekeeping
+- retention policy
+- storage usage view
+- safe orphan cleanup
+- optional per-file delete
+
+### DEV-026 — Rich previews
+- PDF first-page preview
+- common office/document metadata
+- only if safe and useful
+
+### DEV-027 — Mobile optimisation
+- mobile browser/PWA polish
+- camera/photo share flow
+
+## Development order
+
+Unless the user changes priorities, use this order:
+
+1. DEV-001 — scaffold
+2. DEV-002 + DEV-003 — identity/security and persistence
+3. DEV-004 — real-time transport
+4. DEV-005 + DEV-006 — conversation UI and attachment API
+5. DEV-007 + DEV-008 — drag/drop and clipboard transfer
+6. DEV-009 + DEV-010 — previews and reliability
+7. DEV-011 — production deployment
+8. DEV-012 — full Mac/Windows acceptance
+
+Independent tasks may run in parallel only when file/module ownership is clear and integration dependencies are respected.
+
+## Agent maintenance rule
+
+Every meaningful implementation change must update this ledger.
+
+Before starting work:
+- identify the highest-priority incomplete DEV item;
+- confirm dependencies;
+- mark it IN PROGRESS;
+- record branch/agent ownership.
+
+Before marking COMPLETE:
+- record changed files;
+- record tests/validation;
+- record CI result if available;
+- record commit/PR/merge evidence;
+- verify the feature exists on the intended branch;
+- keep user acceptance separate from development completion.
+
+If work stops part-way through, record what remains and the safest continuation point.
