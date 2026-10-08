@@ -187,3 +187,52 @@ def test_attachment_history_survives_application_reload(tmp_path):
     download = reloaded.get(matching[0]["attachments"][0]["download_url"])
     assert download.status_code == 200
     assert download.content == b"durable attachment"
+
+
+def test_clear_chat_requires_authentication(tmp_path):
+    client = make_client(tmp_path)
+    assert client.delete("/api/messages").status_code == 401
+
+
+def test_clear_chat_removes_messages_and_attachments(tmp_path):
+    client = make_client(tmp_path)
+    client.post("/api/login", json={"identity": "Gez", "pin": "1234"})
+
+    created = client.post(
+        "/api/messages/with-files",
+        data={"body": "temporary", "client_message_id": "clear-1"},
+        files=[("files", ("clear-me.txt", b"delete me", "text/plain"))],
+    )
+    assert created.status_code == 201
+    attachment = created.json()["attachments"][0]
+
+    upload_dir = tmp_path / "uploads"
+    stored_files = list(upload_dir.iterdir())
+    assert len(stored_files) == 1
+
+    cleared = client.delete("/api/messages")
+    assert cleared.status_code == 200
+    payload = cleared.json()
+    assert payload["status"] == "ok"
+    assert payload["deleted_attachments"] == 1
+    assert payload["cleanup_failures"] == []
+
+    assert client.get("/api/messages").json() == []
+    assert not any(upload_dir.iterdir())
+    assert client.get(attachment["download_url"]).status_code == 404
+
+
+def test_clear_chat_broadcasts_to_connected_clients(tmp_path):
+    client = make_client(tmp_path)
+    client.post("/api/login", json={"identity": "Tanya", "pin": "1234"})
+
+    with client.websocket_connect("/ws") as websocket:
+        presence = websocket.receive_json()
+        assert presence["type"] == "presence.changed"
+
+        cleared = client.delete("/api/messages")
+        assert cleared.status_code == 200
+
+        event = websocket.receive_json()
+        assert event["type"] == "chat.cleared"
+        assert event["cleared_by"] == "Tanya"
