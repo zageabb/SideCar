@@ -149,3 +149,27 @@ After every update:
 ## HTTPS note
 
 HTTPS is recommended even on the LAN because browser clipboard APIs are more consistent in a secure context. Sidecar still supports plain-HTTP LAN access, including the fallback client-message ID path added after BUG-001.
+
+
+## Helper scripts
+
+Sidecar now includes:
+
+```text
+scripts/backup.sh
+scripts/restore.sh
+```
+
+Backup:
+
+```bash
+sh scripts/backup.sh
+```
+
+Restore:
+
+```bash
+sh scripts/restore.sh backups/<backup-file>.tar.gz
+```
+
+If your Docker Compose project name is not `sidecar`, set `SIDECAR_VOLUME_NAME` to the actual named volume before running either script.
