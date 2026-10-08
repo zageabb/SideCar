@@ -144,3 +144,21 @@ def test_unauthenticated_websocket_is_rejected(tmp_path):
     except Exception:
         return
     raise AssertionError("Unauthenticated WebSocket connection should be rejected")
+
+
+def test_message_history_survives_application_reload(tmp_path):
+    client = make_client(tmp_path)
+    client.post("/api/login", json={"identity": "Gez", "pin": "1234"})
+    created = client.post(
+        "/api/messages",
+        json={"body": "persist me", "client_message_id": "persist-1"},
+    )
+    assert created.status_code == 201
+
+    reloaded = make_client(tmp_path)
+    reloaded.post("/api/login", json={"identity": "Tanya", "pin": "1234"})
+    history = reloaded.get("/api/messages")
+    assert history.status_code == 200
+    matches = [m for m in history.json() if m["client_message_id"] == "persist-1"]
+    assert len(matches) == 1
+    assert matches[0]["body"] == "persist me"
