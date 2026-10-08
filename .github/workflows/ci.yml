@@ -33,4 +33,14 @@ jobs:
     needs: [backend, frontend]
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t sidecar:test .
+      - name: Validate shell scripts
+        run: |
+          sh -n scripts/backup.sh
+          sh -n scripts/restore.sh
+      - name: Validate Compose
+        env:
+          SIDECAR_PIN: test-pin
+          SIDECAR_SECRET: test-secret
+        run: docker compose config >/dev/null
+      - name: Build container
+        run: docker build -t sidecar:test .
