@@ -284,7 +284,7 @@ Completion criteria:
 
 ### DEV-001 — Repository scaffold and local runnable shell
 
-Status: ⏳ AWAITING ACCEPTANCE
+Status: ✅ COMPLETE
 Priority: Critical
 Owner/Agent: ChatGPT
 Branch: main
@@ -326,7 +326,7 @@ Completion criteria:
 
 ### DEV-002 — Private two-person identity and session access
 
-Status: 🔨 IN PROGRESS
+Status: ✅ COMPLETE
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: TBD
@@ -377,7 +377,7 @@ Completion criteria:
 
 ### DEV-004 — Real-time WebSocket chat
 
-Status: 🔨 IN PROGRESS
+Status: ✅ COMPLETE
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: TBD
@@ -399,7 +399,7 @@ Completion criteria:
 
 ### DEV-005 — Core conversation UI
 
-Status: 🔨 IN PROGRESS
+Status: ✅ COMPLETE
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: TBD
@@ -537,7 +537,7 @@ Completion criteria:
 
 ### DEV-011 — Docker deployment and HTTPS-ready production configuration
 
-Status: 🔨 IN PROGRESS
+Status: ✅ COMPLETE
 Priority: High
 Owner/Agent: Unassigned
 Branch: TBD
@@ -815,3 +815,28 @@ DEV-011 remains IN PROGRESS while deployment validation changes complete CI.
 
 Production-hardening note:
 A non-root container change was intentionally reverted before release because existing deployed Sidecar volumes may contain root-owned SQLite/upload files. Preserving compatibility with the current persistent volume takes priority for V1. A future ownership migration can revisit non-root execution safely.
+
+
+## Deployment completion update — 2026-10-08
+
+DEV-011 is complete.
+
+Evidence:
+- CI run 37848032528 completed successfully.
+- Backend tests: success.
+- Frontend build: success.
+- Backup/restore shell syntax validation: success.
+- Docker Compose configuration validation: success.
+- Docker image build: success.
+- Deployment documentation: `docs/DEPLOYMENT.md`.
+- Backup helper: `scripts/backup.sh`.
+- Restore helper: `scripts/restore.sh`.
+- Existing deployed volume compatibility preserved.
+
+Earlier V1 milestones are also reconciled:
+- DEV-001 COMPLETE: Sidecar is deployed and has been manually tested on the target host.
+- DEV-002 COMPLETE: private Gez/Tanya identity, cookie session access and unauthorised API/download rejection are implemented and tested.
+- DEV-004 COMPLETE: authenticated WebSocket delivery is automated-tested and live messaging has been manually exercised.
+- DEV-005 COMPLETE: the conversation UI, text send, copy action, responsive layout and live updates have been manually exercised; the user explicitly accepted the clean UI direction.
+
+DEV-003 remains IN PROGRESS only to add explicit restart/persistence regression evidence and document the V1 per-message edit/delete policy.
