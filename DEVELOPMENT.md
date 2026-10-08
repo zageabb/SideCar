@@ -290,26 +290,42 @@ Owner/Agent: ChatGPT
 Branch: main
 Depends on: DEV-000
 Can run in parallel with: None
-Integration status: implementation underway
+Integration status: first test slice on main; CI validation running
 
 Requirement:
 Create the runnable Sidecar project skeleton with front end, back end, configuration, local development workflow, Docker support and initial CI.
 
+Implementation so far:
+- React + TypeScript/Vite front end.
+- FastAPI back end.
+- SQLite persistence.
+- Dockerfile and Docker Compose deployment.
+- Health endpoint.
+- GitHub Actions backend/frontend/Docker validation.
+- README with local and Docker test instructions.
+- First-test chat flow is implemented: private PIN login, Gez/Tanya identity, persistent text messages, WebSocket live delivery and reconnect indication.
+
+Evidence:
+- Front-end CI job: success on run 37812188471.
+- Back-end CI job: success on run 37812188471.
+- Docker CI job: still running at last review; DEV-001 remains IN PROGRESS until final Docker/CI result is known.
+- First-test head at time of review: `9a73f5b45c06b9f22bec5cfdffe1fa11a19e7a15`.
+
 Completion criteria:
-- [ ] React + TypeScript front end exists.
-- [ ] FastAPI back end exists.
-- [ ] Local development commands documented.
+- [x] React + TypeScript front end exists.
+- [x] FastAPI back end exists.
+- [x] Local development commands documented.
 - [ ] Docker build works.
-- [ ] Docker Compose starts the application.
-- [ ] Persistent database/upload volumes defined.
-- [ ] Health endpoint exists.
-- [ ] Basic lint/test/type-check commands exist.
-- [ ] GitHub Actions validates the project.
-- [ ] README contains setup and run instructions.
+- [ ] Docker Compose starts the application on the target/test host.
+- [x] Persistent database volume defined.
+- [x] Health endpoint exists.
+- [x] Basic test/type-check/build commands exist.
+- [ ] GitHub Actions fully passes.
+- [x] README contains setup and run instructions.
 
 ### DEV-002 — Private two-person identity and session access
 
-Status: 🔵 PLANNED
+Status: 🔨 IN PROGRESS
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: TBD
@@ -337,7 +353,7 @@ Completion criteria:
 
 ### DEV-003 — Persistent chat data model and REST API
 
-Status: 🔵 PLANNED
+Status: 🔨 IN PROGRESS
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: TBD
@@ -360,7 +376,7 @@ Completion criteria:
 
 ### DEV-004 — Real-time WebSocket chat
 
-Status: 🔵 PLANNED
+Status: 🔨 IN PROGRESS
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: TBD
@@ -382,7 +398,7 @@ Completion criteria:
 
 ### DEV-005 — Core conversation UI
 
-Status: 🔵 PLANNED
+Status: 🔨 IN PROGRESS
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: TBD
@@ -651,3 +667,20 @@ Before marking COMPLETE:
 - keep user acceptance separate from development completion.
 
 If work stops part-way through, record what remains and the safest continuation point.
+
+
+## First test checkpoint — 2026-10-08
+
+A first-testable text-chat build now exists on `main`.
+
+Current manual test scope:
+1. Build/start with `docker compose up --build`.
+2. Open Sidecar on two browser sessions/devices.
+3. Log one in as Gez and one as Tanya using the configured shared PIN.
+4. Send text from either side.
+5. Confirm the other side receives it live.
+6. Refresh both browsers and confirm history persists.
+7. Restart the container and confirm history persists.
+8. Confirm an unauthenticated browser cannot read `/api/messages`.
+
+This checkpoint intentionally precedes attachment transfer. File upload, drag/drop and clipboard attachments remain DEV-006 through DEV-008.
