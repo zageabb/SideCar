@@ -354,7 +354,7 @@ Completion criteria:
 
 ### DEV-003 — Persistent chat data model and REST API
 
-Status: 🔨 IN PROGRESS
+Status: ✅ COMPLETE
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: TBD
@@ -560,7 +560,7 @@ Completion criteria:
 
 ### DEV-012 — V1 end-to-end acceptance
 
-Status: 🔵 PLANNED
+Status: 🔨 IN PROGRESS
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: main
@@ -840,3 +840,15 @@ Earlier V1 milestones are also reconciled:
 - DEV-005 COMPLETE: the conversation UI, text send, copy action, responsive layout and live updates have been manually exercised; the user explicitly accepted the clean UI direction.
 
 DEV-003 remains IN PROGRESS only to add explicit restart/persistence regression evidence and document the V1 per-message edit/delete policy.
+
+
+## Persistence completion update — 2026-10-08
+
+DEV-003 is complete.
+
+Evidence:
+- message history persistence across application reload is covered by an automated regression test;
+- V1 policy is explicit: sent messages are immutable; whole-conversation deletion is planned separately as DEV-028;
+- CI run 37848185357 completed successfully across backend, frontend, deployment validation and Docker build.
+
+DEV-012 final V1 acceptance is now IN PROGRESS.
