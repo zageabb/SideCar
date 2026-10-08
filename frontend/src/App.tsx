@@ -296,10 +296,10 @@ export default function App() {
               <strong>{file.name}</strong>
               <small>{formatBytes(file.size)}</small>
             </span>
-            <button type="button" onClick={() =>
+            <button type="button" onClick={() => {
               resetPendingClientId()
               setPendingFiles(current => current.filter((_, i) => i !== index))
-            }>×</button>
+            }}>×</button>
           </div>
         )}
       </div>}
