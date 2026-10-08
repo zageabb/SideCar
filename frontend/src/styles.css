@@ -68,3 +68,12 @@ textarea { resize:none; min-height:52px; max-height:140px; background:#111f33; c
   .transfer-hint { padding-left:4px; }
   .attachment-card { min-width:0; }
 }
+
+.danger-link { color:#f3a6ad; }
+.danger { border:0; background:#b63a48; color:white; font-weight:700; padding:11px 16px; border-radius:12px; }
+.danger:disabled { opacity:.5; cursor:default; }
+.modal-backdrop { position:fixed; z-index:50; inset:0; display:grid; place-items:center; padding:24px; background:#050912cc; }
+.confirm-card { width:min(440px,100%); background:#111c2e; border:1px solid #3a4b64; border-radius:20px; padding:24px; box-shadow:0 24px 80px #0009; }
+.confirm-card h2 { margin:0 0 10px; font-size:21px; }
+.confirm-card p { margin:0; color:#a9b8cc; line-height:1.5; }
+.confirm-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
