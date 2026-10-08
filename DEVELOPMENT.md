@@ -514,7 +514,7 @@ Completion criteria:
 
 ### DEV-010 — Reliability, reconnect and delivery feedback
 
-Status: 🔨 IN PROGRESS
+Status: ✅ COMPLETE
 Priority: High
 Owner/Agent: Unassigned
 Branch: TBD
@@ -798,3 +798,20 @@ Completion criteria:
 - [ ] Both connected clients update without requiring a manual refresh.
 - [ ] Unauthenticated users cannot clear history.
 - [ ] Automated tests cover authorisation and complete cleanup.
+
+
+## Reliability completion update — 2026-10-08
+
+DEV-010 is complete.
+
+Evidence:
+- retry idempotency implemented for text and attachment sends;
+- reconnect reloads authoritative REST history;
+- authenticated WebSocket delivery and unauthenticated rejection covered by backend tests;
+- CI run 37847334219 completed successfully across backend, frontend and Docker stages;
+- corrected frontend retry implementation is integrated on `main`.
+
+DEV-011 remains IN PROGRESS while deployment validation changes complete CI.
+
+Production-hardening note:
+A non-root container change was intentionally reverted before release because existing deployed Sidecar volumes may contain root-owned SQLite/upload files. Preserving compatibility with the current persistent volume takes priority for V1. A future ownership migration can revisit non-root execution safely.
