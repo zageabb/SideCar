@@ -1,6 +1,6 @@
 # Sidecar Development Status
 
-Last reviewed: 2026-10-06
+Last reviewed: 2026-10-08
 Current development state: ACTIVE
 
 ## Purpose
@@ -284,13 +284,13 @@ Completion criteria:
 
 ### DEV-001 — Repository scaffold and local runnable shell
 
-Status: 🔵 PLANNED
+Status: 🔨 IN PROGRESS
 Priority: Critical
-Owner/Agent: Unassigned
-Branch: TBD
+Owner/Agent: ChatGPT
+Branch: main
 Depends on: DEV-000
 Can run in parallel with: None
-Integration status: not started
+Integration status: implementation underway
 
 Requirement:
 Create the runnable Sidecar project skeleton with front end, back end, configuration, local development workflow, Docker support and initial CI.
