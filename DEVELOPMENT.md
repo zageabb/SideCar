@@ -685,3 +685,40 @@ Current manual test scope:
 8. Confirm an unauthenticated browser cannot read `/api/messages`.
 
 This checkpoint intentionally precedes attachment transfer. File upload, drag/drop and clipboard attachments remain DEV-006 through DEV-008.
+
+
+### BUG-001 — Send fails on plain-HTTP server-IP access
+
+Status: 🔨 IN PROGRESS
+Priority: Critical
+Owner/Agent: ChatGPT
+Branch: main
+Depends on: DEV-005
+Integration status: fix committed; CI verification pending
+
+Observed:
+- UI loads correctly.
+- Sending a text message does not work when Sidecar is accessed over plain HTTP by server IP.
+
+Root cause:
+- Front-end client IDs used `crypto.randomUUID()`.
+- That API is not consistently available outside secure contexts (HTTPS/localhost).
+- Sidecar's first test path uses plain HTTP on a LAN server IP, so the send handler could throw before issuing the POST request.
+
+Fix:
+- Added a secure-context-independent UUID fallback using `crypto.getRandomValues()` where available.
+- Added a final timestamp/random fallback.
+- Wrapped message sending in error handling so future client-side failures display a visible error instead of silently doing nothing.
+
+Evidence:
+- Fix commit: `9f36a73b0b8c5be0193727864232cdc19cd8c5b8`.
+- File: `frontend/src/App.tsx`.
+- CI: pending.
+
+Completion criteria:
+- [x] Root cause identified.
+- [x] Local-HTTP-compatible client message ID generation implemented.
+- [x] Send path now surfaces failures visibly.
+- [ ] Front-end production build passes.
+- [ ] Docker build passes.
+- [ ] User confirms send works from deployed LAN instance.
