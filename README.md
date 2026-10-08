@@ -87,3 +87,8 @@ Clipboard-file paste support depends on what the browser and operating system ex
 ## Production deployment
 
 See `docs/DEPLOYMENT.md` for HTTPS/reverse-proxy setup, persistent storage, backup/restore, and the deployment upgrade checklist.
+
+
+## V1 message retention policy
+
+Per-message editing/deletion is intentionally not part of V1. Messages and attachments remain immutable once sent. A separate planned **Clear chat** feature (DEV-028) will provide an explicit, confirmed way to remove the full shared conversation and its stored attachments.
