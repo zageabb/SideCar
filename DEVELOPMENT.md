@@ -284,13 +284,13 @@ Completion criteria:
 
 ### DEV-001 — Repository scaffold and local runnable shell
 
-Status: 🔨 IN PROGRESS
+Status: ⏳ AWAITING ACCEPTANCE
 Priority: Critical
 Owner/Agent: ChatGPT
 Branch: main
 Depends on: DEV-000
 Can run in parallel with: None
-Integration status: first test slice on main; CI validation running
+Integration status: first test slice integrated on main; automated CI green
 
 Requirement:
 Create the runnable Sidecar project skeleton with front end, back end, configuration, local development workflow, Docker support and initial CI.
@@ -308,19 +308,20 @@ Implementation so far:
 Evidence:
 - Front-end CI job: success on run 37812188471.
 - Back-end CI job: success on run 37812188471.
-- Docker CI job: still running at last review; DEV-001 remains IN PROGRESS until final Docker/CI result is known.
+- Docker CI job: success on run 37812188471.
+- Overall CI run 37812188471: success.
 - First-test head at time of review: `9a73f5b45c06b9f22bec5cfdffe1fa11a19e7a15`.
 
 Completion criteria:
 - [x] React + TypeScript front end exists.
 - [x] FastAPI back end exists.
 - [x] Local development commands documented.
-- [ ] Docker build works.
+- [x] Docker build works.
 - [ ] Docker Compose starts the application on the target/test host.
 - [x] Persistent database volume defined.
 - [x] Health endpoint exists.
 - [x] Basic test/type-check/build commands exist.
-- [ ] GitHub Actions fully passes.
+- [x] GitHub Actions fully passes.
 - [x] README contains setup and run instructions.
 
 ### DEV-002 — Private two-person identity and session access
