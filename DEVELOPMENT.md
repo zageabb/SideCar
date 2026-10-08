@@ -852,3 +852,20 @@ Evidence:
 - CI run 37848185357 completed successfully across backend, frontend, deployment validation and Docker build.
 
 DEV-012 final V1 acceptance is now IN PROGRESS.
+
+
+## Clear chat implementation update — 2026-10-08
+
+DEV-028 implementation is now present on `main` pending CI and user acceptance.
+
+Implemented:
+- authenticated `DELETE /api/messages`;
+- message and attachment metadata deletion;
+- stored attachment file cleanup;
+- cleanup failures returned to the client;
+- `chat.cleared` WebSocket broadcast;
+- both connected clients clear immediately;
+- destructive confirmation dialog in the UI;
+- unauthorised-clear regression test;
+- full cleanup regression test;
+- WebSocket clear-event regression test.
