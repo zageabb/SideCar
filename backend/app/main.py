@@ -261,6 +261,42 @@ async def create_message_with_files(
     return message
 
 
+@app.delete("/api/messages")
+async def clear_messages(
+    sidecar_session: str | None = Cookie(default=None),
+) -> dict[str, Any]:
+    cleared_by = require_user(sidecar_session)
+
+    with connect() as conn:
+        attachments = conn.execute(
+            "SELECT stored_filename FROM attachments"
+        ).fetchall()
+        conn.execute("DELETE FROM attachments")
+        conn.execute("DELETE FROM messages")
+        conn.commit()
+
+    cleanup_failures: list[str] = []
+    for row in attachments:
+        path = UPLOAD_DIR / row["stored_filename"]
+        try:
+            path.unlink(missing_ok=True)
+        except OSError:
+            cleanup_failures.append(row["stored_filename"])
+
+    payload = {
+        "type": "chat.cleared",
+        "cleared_by": cleared_by,
+        "cleanup_failures": len(cleanup_failures),
+    }
+    await manager.broadcast(payload)
+    return {
+        "status": "ok",
+        "cleared_by": cleared_by,
+        "deleted_attachments": len(attachments),
+        "cleanup_failures": cleanup_failures,
+    }
+
+
 @app.get("/api/attachments/{attachment_id}")
 def download_attachment(
     attachment_id: str, sidecar_session: str | None = Cookie(default=None)
