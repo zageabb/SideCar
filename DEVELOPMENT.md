@@ -763,3 +763,38 @@ User confirmed the file-transfer build passes manual testing. DEV-006 through DE
 DEV-010 is now active. Implemented so far: retry attempts reuse the same client message ID until the draft changes or succeeds; reconnecting WebSockets reload authoritative REST history; attachment retry idempotency has backend regression coverage. CI exposed a frontend JSX syntax regression in this reliability slice, corrected in commit `9318521326ea5dc6780aab79021fb37901c42f97`; DEV-010 remains IN PROGRESS until the corrected head is green.
 
 DEV-011 is also active. `docs/DEPLOYMENT.md` now documents production environment settings, HTTPS/Secure-cookie configuration, WebSocket reverse-proxy requirements, persistent-volume backup/restore, and an upgrade verification checklist.
+
+
+### DEV-028 — Clear conversation history
+
+Status: 🔵 PLANNED
+Priority: Medium
+Owner/Agent: Unassigned
+Branch: TBD
+Depends on: DEV-003, DEV-006
+Can run in parallel with: later V2 convenience work
+Integration status: not started
+
+Requirement:
+Allow Gez or Tanya to clear the shared Sidecar conversation when the retained history is no longer wanted.
+
+Design intent:
+- Provide a clearly labelled **Clear chat** action in the UI.
+- Require explicit confirmation before deletion.
+- Prefer a two-step confirmation for destructive clearing.
+- Clear both message records and attachment metadata.
+- Remove associated stored attachment files so disk space is actually reclaimed.
+- Do not affect Sidecar configuration, identities, PIN/secret, or deployment settings.
+- Do not silently auto-clear history.
+- Record the clear action in application logs where practical, without retaining message content.
+
+Completion criteria:
+- [ ] Clear-chat control exists in an appropriate settings/menu location.
+- [ ] Destructive confirmation is required.
+- [ ] Messages are removed atomically.
+- [ ] Attachment database rows are removed.
+- [ ] Attachment files are removed from storage.
+- [ ] Failed file cleanup is surfaced/logged safely.
+- [ ] Both connected clients update without requiring a manual refresh.
+- [ ] Unauthenticated users cannot clear history.
+- [ ] Automated tests cover authorisation and complete cleanup.
