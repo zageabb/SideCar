@@ -1,0 +1,22 @@
+services:
+  sidecar:
+    build: .
+    container_name: sidecar
+    ports:
+      - "${SIDECAR_PORT:-8088}:8000"
+    environment:
+      SIDECAR_PIN: "${SIDECAR_PIN:-sidecar}"
+      SIDECAR_SECRET: "${SIDECAR_SECRET:-change-this-secret}"
+      SIDECAR_SECURE_COOKIE: "${SIDECAR_SECURE_COOKIE:-false}"
+      SIDECAR_DB_PATH: /data/sidecar.db
+    volumes:
+      - sidecar-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  sidecar-data:
