@@ -131,7 +131,7 @@ def messages(sidecar_session: str | None = Cookie(default=None)) -> list[dict[st
             "SELECT id, sender, body, created_at, client_message_id "
             "FROM messages ORDER BY created_at ASC LIMIT 500"
         ).fetchall()
-    return [row_to_message(row, conn) for row in rows]
+        return [row_to_message(row, conn) for row in rows]
 
 
 @app.post("/api/messages", status_code=201)
@@ -185,6 +185,8 @@ async def create_message_with_files(
 ) -> dict[str, Any]:
     sender = require_user(sidecar_session)
     clean_body = body.strip()
+    if len(clean_body) > 10000:
+        raise HTTPException(status_code=422, detail="Message is too long")
     if not clean_body and not files:
         raise HTTPException(status_code=422, detail="Message needs text or at least one file")
     if len(client_message_id) > 100:
@@ -213,6 +215,7 @@ async def create_message_with_files(
                 suffix = Path(original).suffix[:20]
                 stored_filename = f"{uuid.uuid4()}{suffix}"
                 target = UPLOAD_DIR / stored_filename
+                saved_paths.append(target)
 
                 size = 0
                 with target.open("wb") as handle:
@@ -227,8 +230,6 @@ async def create_message_with_files(
                                 detail=f"{original} exceeds the {MAX_UPLOAD_BYTES // (1024 * 1024)} MB upload limit",
                             )
                         handle.write(chunk)
-                saved_paths.append(target)
-
                 attachment_id = str(uuid.uuid4())
                 conn.execute(
                     "INSERT INTO attachments(id, message_id, original_filename, stored_filename, mime_type, size_bytes, created_at) "
