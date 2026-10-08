@@ -82,3 +82,8 @@ docker build -t sidecar:test .
 ## Current limitation
 
 Clipboard-file paste support depends on what the browser and operating system expose. Screenshot/image paste is expected to work broadly; Finder/Explorer copied-file paste may vary, so drag/drop and the **+** file picker remain supported fallbacks.
+
+
+## Production deployment
+
+See `docs/DEPLOYMENT.md` for HTTPS/reverse-proxy setup, persistent storage, backup/restore, and the deployment upgrade checklist.
