@@ -2,16 +2,23 @@
 
 Sidecar is a private two-person web chat and quick handoff tool for Gez and Tanya.
 
-The first test build already supports:
+The current test build supports:
 - Gez/Tanya identity selection
 - private PIN access
 - persistent SQLite message history
 - live WebSocket delivery
 - reconnect status
-- copy button on received/sent text
+- copy button on text
+- secure persistent file attachments
+- file-only and text+file messages
+- multi-file upload
+- drag/drop from Finder/Explorer
+- pasted screenshots and browser-exposed clipboard files
+- inline image previews
+- authenticated downloads
 - Docker deployment
 
-File transfer, drag/drop and clipboard attachments are the next development slice.
+The default upload limit is 100 MB per file and can be changed with `SIDECAR_MAX_UPLOAD_BYTES`.
 
 ## Quick test with Docker
 
@@ -37,6 +44,8 @@ sidecar
 For a real/private deployment, change the PIN and secret.
 
 To test two-person chat, open Sidecar in two browsers or two devices. Log one in as Gez and one as Tanya, using the same PIN. Messages should appear live on both and remain after refresh/restart.
+
+For file transfer, drag one or more files anywhere over the Sidecar window, use the **+** button, or paste a screenshot into the message box. A file can be sent without any text.
 
 ## Local development
 
@@ -72,4 +81,4 @@ docker build -t sidecar:test .
 
 ## Current limitation
 
-This is the **first test build**, focused on proving the chat/persistence path. Attachment transfer, Finder/Explorer drag/drop and clipboard image/file handling remain planned in `DEVELOPMENT.md`.
+Clipboard-file paste support depends on what the browser and operating system expose. Screenshot/image paste is expected to work broadly; Finder/Explorer copied-file paste may vary, so drag/drop and the **+** file picker remain supported fallbacks.
