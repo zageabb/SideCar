@@ -91,3 +91,24 @@ def test_upload_size_limit(tmp_path):
         files=[("files", ("too-big.bin", b"x" * (1024 * 1024 + 1), "application/octet-stream"))],
     )
     assert response.status_code == 413
+
+
+def test_file_upload_retry_is_idempotent(tmp_path):
+    client = make_client(tmp_path)
+    client.post("/api/login", json={"identity": "Gez", "pin": "1234"})
+
+    payload = {
+        "data": {"body": "with attachment", "client_message_id": "retry-file-1"},
+        "files": [("files", ("retry.txt", b"same file", "text/plain"))],
+    }
+    first = client.post("/api/messages/with-files", **payload)
+    assert first.status_code == 201
+
+    second = client.post("/api/messages/with-files", **payload)
+    assert second.status_code == 201
+    assert second.json()["id"] == first.json()["id"]
+    assert len(second.json()["attachments"]) == 1
+
+    history = client.get("/api/messages").json()
+    matching = [m for m in history if m["client_message_id"] == "retry-file-1"]
+    assert len(matching) == 1
