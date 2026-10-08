@@ -423,7 +423,7 @@ Completion criteria:
 
 ### DEV-006 — Attachment storage and secure file API
 
-Status: 🔨 IN PROGRESS
+Status: ✅ COMPLETE
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: TBD
@@ -447,7 +447,7 @@ Completion criteria:
 
 ### DEV-007 — Drag/drop and file-transfer UX
 
-Status: 🔨 IN PROGRESS
+Status: ✅ COMPLETE
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: TBD
@@ -470,7 +470,7 @@ Completion criteria:
 
 ### DEV-008 — Clipboard paste handling
 
-Status: 🔨 IN PROGRESS
+Status: ✅ COMPLETE
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: TBD
@@ -493,7 +493,7 @@ Completion criteria:
 
 ### DEV-009 — Inline previews and attachment presentation
 
-Status: 🔨 IN PROGRESS
+Status: ✅ COMPLETE
 Priority: High
 Owner/Agent: Unassigned
 Branch: TBD
@@ -514,7 +514,7 @@ Completion criteria:
 
 ### DEV-010 — Reliability, reconnect and delivery feedback
 
-Status: 🔵 PLANNED
+Status: 🔨 IN PROGRESS
 Priority: High
 Owner/Agent: Unassigned
 Branch: TBD
@@ -537,7 +537,7 @@ Completion criteria:
 
 ### DEV-011 — Docker deployment and HTTPS-ready production configuration
 
-Status: 🔵 PLANNED
+Status: 🔨 IN PROGRESS
 Priority: High
 Owner/Agent: Unassigned
 Branch: TBD
@@ -689,7 +689,7 @@ This checkpoint intentionally precedes attachment transfer. File upload, drag/dr
 
 ### BUG-001 — Send fails on plain-HTTP server-IP access
 
-Status: 🔨 IN PROGRESS
+Status: ✅ COMPLETE
 Priority: Critical
 Owner/Agent: ChatGPT
 Branch: main
@@ -754,3 +754,12 @@ Manual acceptance to perform after deployment:
 7. Refresh and confirm attachment history remains.
 8. Restart the container and confirm downloads still work.
 9. Confirm an unauthenticated browser cannot download an attachment.
+
+
+## Acceptance update — 2026-10-08
+
+User confirmed the file-transfer build passes manual testing. DEV-006 through DEV-009 are accepted and marked COMPLETE. The accepted implementation is also backed by successful CI run 37845676775.
+
+DEV-010 is now active. Implemented so far: retry attempts reuse the same client message ID until the draft changes or succeeds; reconnecting WebSockets reload authoritative REST history; attachment retry idempotency has backend regression coverage. CI exposed a frontend JSX syntax regression in this reliability slice, corrected in commit `9318521326ea5dc6780aab79021fb37901c42f97`; DEV-010 remains IN PROGRESS until the corrected head is green.
+
+DEV-011 is also active. `docs/DEPLOYMENT.md` now documents production environment settings, HTTPS/Secure-cookie configuration, WebSocket reverse-proxy requirements, persistent-volume backup/restore, and an upgrade verification checklist.
