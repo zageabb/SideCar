@@ -51,6 +51,8 @@ export default function App() {
   const [connected, setConnected] = useState(false)
   const [sending, setSending] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [clearing, setClearing] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pendingClientIdRef = useRef<string | null>(null)
@@ -96,6 +98,13 @@ export default function App() {
           setMessages(current => current.some(m => m.id === payload.message.id)
             ? current
             : [...current, payload.message])
+        }
+        if (payload.type === 'chat.cleared') {
+          setMessages([])
+          setPendingFiles([])
+          setBody('')
+          pendingClientIdRef.current = null
+          setShowClearConfirm(false)
         }
       }
     }
@@ -199,11 +208,38 @@ export default function App() {
     }
   }
 
+  async function clearChat() {
+    setClearing(true)
+    setError('')
+    try {
+      const response = await fetch('/api/messages', { method: 'DELETE' })
+      if (!response.ok) {
+        const detail = await response.json().catch(() => null)
+        setError(detail?.detail ? `Could not clear chat: ${detail.detail}` : 'Could not clear chat.')
+        return
+      }
+      const result = await response.json()
+      setMessages([])
+      setPendingFiles([])
+      setBody('')
+      pendingClientIdRef.current = null
+      setShowClearConfirm(false)
+      if (result.cleanup_failures?.length) {
+        setError('Chat was cleared, but some attachment files could not be removed from storage.')
+      }
+    } catch {
+      setError('Could not clear chat. Check the Sidecar connection and try again.')
+    } finally {
+      setClearing(false)
+    }
+  }
+
   async function logout() {
     await fetch('/api/logout', {method: 'POST'})
     setIdentity(null)
     setMessages([])
     setPendingFiles([])
+    setShowClearConfirm(false)
   }
 
   if (!identity) {
@@ -242,6 +278,21 @@ export default function App() {
   >
     {dragging && <div className="drop-overlay">Drop files to send</div>}
 
+    {showClearConfirm && <div className="modal-backdrop" role="presentation">
+      <section className="confirm-card" role="dialog" aria-modal="true" aria-labelledby="clear-chat-title">
+        <h2 id="clear-chat-title">Clear Sidecar chat?</h2>
+        <p>This permanently removes all messages and stored attachments for both Gez and Tanya.</p>
+        <div className="confirm-actions">
+          <button className="ghost" type="button" disabled={clearing}
+            onClick={() => setShowClearConfirm(false)}>Cancel</button>
+          <button className="danger" type="button" disabled={clearing}
+            onClick={() => void clearChat()}>
+            {clearing ? 'Clearing…' : 'Clear everything'}
+          </button>
+        </div>
+      </section>
+    </div>}
+
     <header>
       <div>
         <h1>Sidecar</h1>
@@ -251,6 +302,7 @@ export default function App() {
         <span className={connected ? 'status online' : 'status'}>
           {connected ? 'Connected' : 'Reconnecting'}
         </span>
+        <button className="ghost danger-link" onClick={() => setShowClearConfirm(true)}>Clear chat</button>
         <button className="ghost" onClick={logout}>Switch user</button>
       </div>
     </header>
