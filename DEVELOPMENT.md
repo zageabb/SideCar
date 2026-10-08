@@ -767,7 +767,7 @@ DEV-011 is also active. `docs/DEPLOYMENT.md` now documents production environmen
 
 ### DEV-028 — Clear conversation history
 
-Status: 🔵 PLANNED
+Status: 🔨 IN PROGRESS
 Priority: Medium
 Owner/Agent: Unassigned
 Branch: TBD
