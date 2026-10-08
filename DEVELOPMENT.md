@@ -423,7 +423,7 @@ Completion criteria:
 
 ### DEV-006 — Attachment storage and secure file API
 
-Status: 🔵 PLANNED
+Status: 🔨 IN PROGRESS
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: TBD
@@ -447,7 +447,7 @@ Completion criteria:
 
 ### DEV-007 — Drag/drop and file-transfer UX
 
-Status: 🔵 PLANNED
+Status: 🔨 IN PROGRESS
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: TBD
@@ -470,7 +470,7 @@ Completion criteria:
 
 ### DEV-008 — Clipboard paste handling
 
-Status: 🔵 PLANNED
+Status: 🔨 IN PROGRESS
 Priority: Critical
 Owner/Agent: Unassigned
 Branch: TBD
@@ -493,7 +493,7 @@ Completion criteria:
 
 ### DEV-009 — Inline previews and attachment presentation
 
-Status: 🔵 PLANNED
+Status: 🔨 IN PROGRESS
 Priority: High
 Owner/Agent: Unassigned
 Branch: TBD
@@ -722,3 +722,35 @@ Completion criteria:
 - [ ] Front-end production build passes.
 - [ ] Docker build passes.
 - [ ] User confirms send works from deployed LAN instance.
+
+
+## File transfer test checkpoint — 2026-10-08
+
+Implementation is now present on `main` for DEV-006 through DEV-009 pending CI and user acceptance.
+
+Implemented:
+- persistent attachment metadata in SQLite;
+- persistent files under the configured upload directory;
+- generated server-side storage names while preserving original filenames;
+- authenticated attachment download endpoint;
+- configurable per-file upload limit;
+- rollback/removal of partial files on failed uploads;
+- file-only and text+file messages;
+- multiple attachments per message;
+- file picker;
+- drag/drop across the Sidecar window;
+- clipboard screenshot/browser-exposed file paste;
+- inline image previews;
+- generic downloadable file cards;
+- visible pending-file queue and sending state.
+
+Manual acceptance to perform after deployment:
+1. Drag a file from Windows Explorer onto Sidecar and send it.
+2. Download it from the Mac.
+3. Drag a file from Finder and download it on Windows.
+4. Paste a screenshot into the composer and send it.
+5. Send multiple files at once.
+6. Send a file with no text.
+7. Refresh and confirm attachment history remains.
+8. Restart the container and confirm downloads still work.
+9. Confirm an unauthenticated browser cannot download an attachment.
