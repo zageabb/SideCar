@@ -767,7 +767,7 @@ DEV-011 is also active. `docs/DEPLOYMENT.md` now documents production environmen
 
 ### DEV-028 — Clear conversation history
 
-Status: 🔨 IN PROGRESS
+Status: ✅ COMPLETE
 Priority: Medium
 Owner/Agent: Unassigned
 Branch: TBD
@@ -869,3 +869,19 @@ Implemented:
 - unauthorised-clear regression test;
 - full cleanup regression test;
 - WebSocket clear-event regression test.
+
+
+## Clear chat completion update — 2026-10-08
+
+DEV-028 is complete.
+
+Evidence:
+- authenticated clear endpoint implemented;
+- message and attachment metadata deletion implemented;
+- stored attachment file cleanup implemented;
+- both connected clients receive `chat.cleared` and clear immediately;
+- destructive confirmation UI implemented;
+- unauthorised clear, cleanup, and WebSocket broadcast regression tests added;
+- CI run 37848462432 completed successfully across backend, frontend, deployment validation, and Docker build.
+
+DEV-012 remains the final V1 acceptance item. Engineering evidence is now complete; remaining acceptance is manual verification on the deployed instance.
