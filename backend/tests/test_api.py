@@ -162,3 +162,28 @@ def test_message_history_survives_application_reload(tmp_path):
     matches = [m for m in history.json() if m["client_message_id"] == "persist-1"]
     assert len(matches) == 1
     assert matches[0]["body"] == "persist me"
+
+
+def test_attachment_history_survives_application_reload(tmp_path):
+    client = make_client(tmp_path)
+    client.post("/api/login", json={"identity": "Gez", "pin": "1234"})
+
+    created = client.post(
+        "/api/messages/with-files",
+        data={"body": "", "client_message_id": "persist-file-1"},
+        files=[("files", ("persist.txt", b"durable attachment", "text/plain"))],
+    )
+    assert created.status_code == 201
+    attachment_id = created.json()["attachments"][0]["id"]
+
+    reloaded = make_client(tmp_path)
+    reloaded.post("/api/login", json={"identity": "Tanya", "pin": "1234"})
+    history = reloaded.get("/api/messages")
+    assert history.status_code == 200
+    matching = [m for m in history.json() if m["client_message_id"] == "persist-file-1"]
+    assert len(matching) == 1
+    assert matching[0]["attachments"][0]["id"] == attachment_id
+
+    download = reloaded.get(matching[0]["attachments"][0]["download_url"])
+    assert download.status_code == 200
+    assert download.content == b"durable attachment"
