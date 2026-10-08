@@ -112,3 +112,35 @@ def test_file_upload_retry_is_idempotent(tmp_path):
     history = client.get("/api/messages").json()
     matching = [m for m in history if m["client_message_id"] == "retry-file-1"]
     assert len(matching) == 1
+
+
+def test_authenticated_websocket_receives_messages(tmp_path):
+    client = make_client(tmp_path)
+    client.post("/api/login", json={"identity": "Gez", "pin": "1234"})
+
+    with client.websocket_connect("/ws") as websocket:
+        presence = websocket.receive_json()
+        assert presence["type"] == "presence.changed"
+        assert presence["identity"] == "Gez"
+        assert presence["online"] is True
+
+        response = client.post(
+            "/api/messages",
+            json={"body": "live message", "client_message_id": "ws-live-1"},
+        )
+        assert response.status_code == 201
+
+        event = websocket.receive_json()
+        assert event["type"] == "message.created"
+        assert event["message"]["body"] == "live message"
+        assert event["message"]["client_message_id"] == "ws-live-1"
+
+
+def test_unauthenticated_websocket_is_rejected(tmp_path):
+    client = make_client(tmp_path)
+    try:
+        with client.websocket_connect("/ws") as websocket:
+            websocket.receive_text()
+    except Exception:
+        return
+    raise AssertionError("Unauthenticated WebSocket connection should be rejected")
