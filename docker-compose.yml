@@ -9,6 +9,8 @@ services:
       SIDECAR_SECRET: "${SIDECAR_SECRET:-change-this-secret}"
       SIDECAR_SECURE_COOKIE: "${SIDECAR_SECURE_COOKIE:-false}"
       SIDECAR_DB_PATH: /data/sidecar.db
+      SIDECAR_UPLOAD_DIR: /data/uploads
+      SIDECAR_MAX_UPLOAD_BYTES: "${SIDECAR_MAX_UPLOAD_BYTES:-104857600}"
     volumes:
       - sidecar-data:/data
     restart: unless-stopped
