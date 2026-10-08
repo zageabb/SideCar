@@ -53,6 +53,7 @@ export default function App() {
   const [dragging, setDragging] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const pendingClientIdRef = useRef<string | null>(null)
 
   const peer = useMemo(() => identity === 'Gez' ? 'Tanya' : 'Gez', [identity])
   const canSend = Boolean(body.trim() || pendingFiles.length)
@@ -81,7 +82,10 @@ export default function App() {
     const connect = () => {
       const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
       socket = new WebSocket(`${protocol}//${location.host}/ws`)
-      socket.onopen = () => setConnected(true)
+      socket.onopen = () => {
+        setConnected(true)
+        void loadMessages()
+      }
       socket.onclose = () => {
         setConnected(false)
         retry = window.setTimeout(connect, 1500)
@@ -123,8 +127,13 @@ export default function App() {
     setPin('')
   }
 
+  function resetPendingClientId() {
+    pendingClientIdRef.current = null
+  }
+
   function addFiles(files: File[]) {
     if (!files.length) return
+    resetPendingClientId()
     setPendingFiles(current => [...current, ...files])
   }
 
@@ -151,6 +160,8 @@ export default function App() {
     if (!text && !pendingFiles.length) return
 
     const filesToSend = pendingFiles
+    const clientMessageId = pendingClientIdRef.current ?? newClientId()
+    pendingClientIdRef.current = clientMessageId
     setSending(true)
     setError('')
 
@@ -159,14 +170,14 @@ export default function App() {
       if (filesToSend.length) {
         const form = new FormData()
         form.append('body', text)
-        form.append('client_message_id', newClientId())
+        form.append('client_message_id', clientMessageId)
         filesToSend.forEach(file => form.append('files', file, file.name))
         response = await fetch('/api/messages/with-files', { method: 'POST', body: form })
       } else {
         response = await fetch('/api/messages', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ body: text, client_message_id: newClientId() }),
+          body: JSON.stringify({ body: text, client_message_id: clientMessageId }),
         })
       }
 
@@ -180,6 +191,7 @@ export default function App() {
       setMessages(current => current.some(m => m.id === message.id) ? current : [...current, message])
       setBody('')
       setPendingFiles([])
+      pendingClientIdRef.current = null
     } catch {
       setError('Could not send. Check the Sidecar connection and try again.')
     } finally {
@@ -285,6 +297,7 @@ export default function App() {
               <small>{formatBytes(file.size)}</small>
             </span>
             <button type="button" onClick={() =>
+              resetPendingClientId()
               setPendingFiles(current => current.filter((_, i) => i !== index))
             }>×</button>
           </div>
@@ -299,7 +312,10 @@ export default function App() {
           }} />
         <button className="attach" type="button" title="Attach files"
           onClick={() => fileInputRef.current?.click()}>＋</button>
-        <textarea value={body} onChange={e => setBody(e.target.value)}
+        <textarea value={body} onChange={e => {
+          resetPendingClientId()
+          setBody(e.target.value)
+        }}
           onPaste={handlePaste}
           placeholder={`Message ${peer}… or paste/drop a file`}
           onKeyDown={e => {
