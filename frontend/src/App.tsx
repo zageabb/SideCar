@@ -19,6 +19,12 @@ type Message = {
   attachments?: Attachment[]
 }
 
+// Preserve LAN root mode while supporting UDA's /apps/sidecar/ mount.
+const appMount = location.pathname.startsWith('/apps/sidecar/')
+  ? '/apps/sidecar/'
+  : '/'
+const sidecarUrl = (path: string) => `${appMount}${path.replace(/^\\/+/, '')}`
+
 function newClientId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID()
@@ -61,14 +67,14 @@ export default function App() {
   const canSend = Boolean(body.trim() || pendingFiles.length)
 
   async function loadMe() {
-    const response = await fetch('/api/me')
+    const response = await fetch(sidecarUrl('/api/me'))
     if (!response.ok) return
     const data = await response.json()
     setIdentity(data.identity)
   }
 
   async function loadMessages() {
-    const response = await fetch('/api/messages')
+    const response = await fetch(sidecarUrl('/api/messages'))
     if (response.ok) setMessages(await response.json())
   }
 
@@ -83,7 +89,7 @@ export default function App() {
 
     const connect = () => {
       const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-      socket = new WebSocket(`${protocol}//${location.host}/ws`)
+      socket = new WebSocket(`${protocol}//${location.host}${sidecarUrl('/ws')}`)
       socket.onopen = () => {
         setConnected(true)
         void loadMessages()
@@ -123,7 +129,7 @@ export default function App() {
   async function login(event: FormEvent) {
     event.preventDefault()
     setError('')
-    const response = await fetch('/api/login', {
+    const response = await fetch(sidecarUrl('/api/login'), {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ identity: selectedIdentity, pin }),
@@ -181,9 +187,9 @@ export default function App() {
         form.append('body', text)
         form.append('client_message_id', clientMessageId)
         filesToSend.forEach(file => form.append('files', file, file.name))
-        response = await fetch('/api/messages/with-files', { method: 'POST', body: form })
+        response = await fetch(sidecarUrl('/api/messages/with-files'), { method: 'POST', body: form })
       } else {
-        response = await fetch('/api/messages', {
+        response = await fetch(sidecarUrl('/api/messages'), {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ body: text, client_message_id: clientMessageId }),
@@ -212,7 +218,7 @@ export default function App() {
     setClearing(true)
     setError('')
     try {
-      const response = await fetch('/api/messages', { method: 'DELETE' })
+      const response = await fetch(sidecarUrl('/api/messages'), { method: 'DELETE' })
       if (!response.ok) {
         const detail = await response.json().catch(() => null)
         setError(detail?.detail ? `Could not clear chat: ${detail.detail}` : 'Could not clear chat.')
@@ -235,7 +241,7 @@ export default function App() {
   }
 
   async function logout() {
-    await fetch('/api/logout', {method: 'POST'})
+    await fetch(sidecarUrl('/api/logout'), {method: 'POST'})
     setIdentity(null)
     setMessages([])
     setPendingFiles([])
@@ -322,8 +328,8 @@ export default function App() {
             {message.attachments?.map(attachment => {
               const isImage = attachment.mime_type.startsWith('image/')
               return <a className="attachment-card" key={attachment.id}
-                href={attachment.download_url} target="_blank" rel="noreferrer">
-                {isImage && <img src={attachment.download_url} alt={attachment.original_filename} />}
+                href={sidecarUrl(attachment.download_url)} target="_blank" rel="noreferrer">
+                {isImage && <img src={sidecarUrl(attachment.download_url)} alt={attachment.original_filename} />}
                 <div className="attachment-details">
                   <strong>{attachment.original_filename}</strong>
                   <span>{formatBytes(attachment.size_bytes)}</span>
