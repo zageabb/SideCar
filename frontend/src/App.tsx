@@ -23,7 +23,7 @@ type Message = {
 const appMount = location.pathname.startsWith('/apps/sidecar/')
   ? '/apps/sidecar/'
   : '/'
-const sidecarUrl = (path: string) => `${appMount}${path.replace(/^\\/+/, '')}`
+const sidecarUrl = (path: string) => `${appMount}${path.startsWith('/') ? path.slice(1) : path}`
 
 function newClientId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
