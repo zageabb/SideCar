@@ -9,6 +9,18 @@ This file is the repository-level source of truth for Sidecar design, developmen
 
 Sidecar is a private two-person web chat for Gez and Tanya, with first-class cross-platform transfer of files, screenshots, clipboard content and short messages between macOS and Windows devices.
 
+## OPS-UDA-001 — Serve Sidecar under UDA application prefix
+
+Status: IN PROGRESS (CI and user acceptance pending)
+
+The live UDA-mounted Sidecar route is `/apps/sidecar/`, with the direct LAN root route preserved. Frontend REST calls, WebSocket connections, private attachment downloads and image previews resolve through the current application mount. Vite uses relative built asset URLs. The existing FastAPI backend continues to receive stripped paths (for example `/api/messages` and `/ws`), so Caddy must retain WebSocket upgrades and authentication on the entire app prefix.
+
+Security: no changes to Sidecar PIN, cookies, stored chat, attachment permissions or UDA public proxy settings. Existing backend should be isolated to trusted ingress.
+
+Evidence: frontend changes and existing GitHub Actions frontend build, backend tests and Docker build.
+- [ ] CI green and merged to `main` for UDA
+- [ ] User verifies two-browser chat, live reconnect, multi-file upload, clipboard paste, download and image preview through authenticated proxy
+
 ## Product objective
 
 Build a simple, dependable private web app that makes it faster to pass text and files between two nearby people/devices than using email, Teams or cloud drives.
