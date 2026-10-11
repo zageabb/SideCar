@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import Cookie, FastAPI, File, Form, HTTPException, Response, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import Cookie, FastAPI, File, Form, HTTPException, Request, Response, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -20,6 +20,19 @@ init_db()
 UPLOAD_DIR = Path(os.getenv("SIDECAR_UPLOAD_DIR", "/data/uploads"))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 MAX_UPLOAD_BYTES = int(os.getenv("SIDECAR_MAX_UPLOAD_BYTES", str(100 * 1024 * 1024)))
+PROXY_PREFIX = os.getenv("SIDECAR_PROXY_PREFIX", "/apps/sidecar").rstrip("/")
+
+
+def session_cookie_options(request: Request) -> tuple[str, bool]:
+    forwarded_prefix = request.headers.get("x-forwarded-prefix", "").rstrip("/")
+    path = f"{PROXY_PREFIX}/" if PROXY_PREFIX and forwarded_prefix == PROXY_PREFIX else "/"
+    forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",", 1)[0].strip()
+    secure = (
+        os.getenv("SIDECAR_SECURE_COOKIE", "false").lower() == "true"
+        or request.url.scheme == "https"
+        or forwarded_proto == "https"
+    )
+    return path, secure
 
 
 class LoginRequest(BaseModel):
@@ -98,23 +111,26 @@ def health() -> dict[str, str]:
 
 
 @app.post("/api/login")
-def login(payload: LoginRequest, response: Response) -> dict[str, str]:
+def login(payload: LoginRequest, request: Request, response: Response) -> dict[str, str]:
     if payload.identity not in USERS or payload.pin != PIN:
         raise HTTPException(status_code=401, detail="Invalid identity or PIN")
+    cookie_path, secure = session_cookie_options(request)
     response.set_cookie(
         COOKIE_NAME,
         make_token(payload.identity),
         httponly=True,
         samesite="strict",
-        secure=os.getenv("SIDECAR_SECURE_COOKIE", "false").lower() == "true",
+        secure=secure,
+        path=cookie_path,
         max_age=60 * 60 * 24 * 30,
     )
     return {"identity": payload.identity}
 
 
 @app.post("/api/logout")
-def logout(response: Response) -> dict[str, str]:
-    response.delete_cookie(COOKIE_NAME)
+def logout(request: Request, response: Response) -> dict[str, str]:
+    cookie_path, _ = session_cookie_options(request)
+    response.delete_cookie(COOKIE_NAME, path=cookie_path)
     return {"status": "ok"}
 
 

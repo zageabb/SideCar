@@ -11,13 +11,25 @@ Sidecar is a private two-person web chat for Gez and Tanya, with first-class cro
 
 ## OPS-UDA-001 — Serve Sidecar under UDA application prefix
 
-Status: IN PROGRESS (CI and user acceptance pending)
+Status: AWAITING REVIEW (CI and user acceptance pending)
+
+Owner/Agent: Codex UDA migration agent
+Branch: `feat/uda-subpath-compatibility`
+Integration status: local implementation and relevant tests complete; pull request pending
 
 The live UDA-mounted Sidecar route is `/apps/sidecar/`, with the direct LAN root route preserved. Frontend REST calls, WebSocket connections, private attachment downloads and image previews resolve through the current application mount. Vite uses relative built asset URLs. The existing FastAPI backend continues to receive stripped paths (for example `/api/messages` and `/ws`), so Caddy must retain WebSocket upgrades and authentication on the entire app prefix.
 
 Security: no changes to Sidecar PIN, cookies, stored chat, attachment permissions or UDA public proxy settings. Existing backend should be isolated to trusted ingress.
 
-Evidence: frontend changes and existing GitHub Actions frontend build, backend tests and Docker build.
+The follow-up scopes the existing named Sidecar session cookie to the trusted
+`/apps/sidecar/` mount when Caddy supplies that exact forwarded prefix, while
+retaining `/` for direct LAN access. HTTPS forwarding also marks the cookie
+Secure. Logout must delete the cookie using the same request-specific path.
+
+Evidence recorded on 2026-10-11:
+- `PYTHONPATH=backend .venv/bin/python -m pytest -q backend/tests tests/test_uda_subpath.py` — 15 passed.
+- `npm install --no-package-lock && npm run build` in `frontend/` — production build passed.
+- Local Docker image build was not run because the Docker daemon was unavailable; the repository CI Docker build remains the authoritative container check.
 - [ ] CI green and merged to `main` for UDA
 - [ ] User verifies two-browser chat, live reconnect, multi-file upload, clipboard paste, download and image preview through authenticated proxy
 
