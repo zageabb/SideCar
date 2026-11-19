@@ -1,0 +1,67 @@
+# DEV-020 review-only V2 candidate. Do not activate until the existing
+# Docker named volume is identified and backed up. No default PIN/secret allowed.
+schema_version: 2
+application:
+  name: sidecar
+  kind: web
+  display_name: Sidecar
+source:
+  repository: zageabb/SideCar
+  branch: main
+containers:
+  - name: sidecar
+    build:
+      context: .
+      dockerfile: Dockerfile
+      provenance: pinned-source-commit
+    ports:
+      - host_port: 8088
+        container_port: 8000
+        bind: 127.0.0.1
+    volumes:
+      - name: sidecar-data
+        kind: named
+        mount_path: /data
+        preserve_data: true
+        backup_policy: manual-review
+        restore_policy: manual-recovery
+    environment_refs:
+      - SIDECAR_PIN
+      - SIDECAR_SECRET
+      - SIDECAR_SECURE_COOKIE
+    restart: unless-stopped
+    health:
+      type: http
+      path: /api/health
+health:
+  aggregate: all-required
+  required_services: [sidecar]
+  on_optional_failure: degraded
+proxy:
+  enabled: true
+  upstream: sidecar
+  canonical_path: /apps/sidecar/
+  authentication: uda
+environment:
+  required:
+    - SIDECAR_PIN
+    - SIDECAR_SECRET
+    - SIDECAR_SECURE_COOKIE
+  definitions:
+    - name: SIDECAR_PIN
+      source: secret
+      phase: runtime
+    - name: SIDECAR_SECRET
+      source: secret
+      phase: runtime
+    - name: SIDECAR_SECURE_COOKIE
+      source: config
+      phase: runtime
+deployment:
+  strategy: containers
+  auto_update: false
+  rollback: false
+  github_reporting: false
+  approval: explicit
+lifecycle:
+  owner: sidecar
