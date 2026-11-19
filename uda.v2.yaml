@@ -23,6 +23,7 @@ containers:
         kind: named
         mount_path: /data
         preserve_data: true
+        owner: sidecar
         backup_policy: manual-review
         restore_policy: manual-recovery
     environment_refs:
